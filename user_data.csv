@@ -1,7 +1,7 @@
 id,username,password,address,city,orders,favorites,balance
 0,Stelios46,1234,Kritis 13,Lamia,"[12, 34]",[34],100.5
 1,Annavailable,1234,Liti 5,Thessaloniki,"[11, 40, 26, 26]","[13, 45]",65.78
-2,GeorgeSo,1234,Tymphristoy 56,Lamia,[22],"[27, 13]",52.0
+2,GeorgeSo,1234,Tymphristoy 56,Lamia,[22],"[27, 34]",52.0
 3,VassoOG,1234,Venizelou 217,Athina,[19],[],32.6
 4,AngelaAthens,1234,Kritsas 5,Athina,[],[37],90.5
 5,GiannisNel,1234,Valaoriou 8,Trikala,"[34, 50]",[21],10.0

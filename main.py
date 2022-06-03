@@ -1,14 +1,17 @@
-import warnings
-from hashlib import new
-
-from numpy import empty
-
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
-import re
+from admin import *
 
 # import pandas as pd
 import pandas as pd
+import numpy as np
+import re
+from numpy import empty
+from unicodedata import category
+import warnings
+from hashlib import new
+import time
+import ast
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def login(df):
@@ -76,101 +79,100 @@ def sign_up(df):
             print("Password not strong enough. Try different password")
 
 
-#fix ids 
-def admin_add_books(books_df):
+def user_add_favorites(user_df, login_id):
     
-    new_books_df = pd.read_csv('new_books.csv')
+    new_favorites_df = pd.read_csv('new_favorites.csv')
 
-    #id = books_df["id"].iloc[-1]
+    old_fav_list = ast.literal_eval(user_df.loc[login_id,'favorites'])
+    
+    new_fav_list = []
+    for index in new_favorites_df.index:
+            new_fav_list.append(new_favorites_df.loc[index,'id'])
 
-    books_df = books_df.append(new_books_df, ignore_index = True)
-    books_df.drop_duplicates(subset ="title",keep = 'first', inplace = True)
-            
-    print("Books have been updated!!!.\n")
-    while True:      
-        choice = input("Do you want to review the updated book list? (y/n)\n").lower()  
-        if choice == "y":
-            print(books_df)
-            break
-        elif choice == "n":
-            break
-        else:
-            print("Enter 'y' or 'n'")
-    return books_df
+    new_fav_list = list(set(old_fav_list + new_fav_list))
+
+    user_df.loc[login_id,'favorites'] = str(new_fav_list)
+    
+    return user_df
 
 
-def admin_add_single_book(books_df):
+def user_add_single_favorite(user_df, books_df, login_id):
 
-    #id,title,author,publisher,categories,cost,shipping,availability,copies,bookstores
-    while True: 
-        new_title = input("Enter the title of the book: ")
-        if not books_df.loc[books_df['title'] == new_title].empty:
-            print("This book is already in the list!!!\n")
-            choice = input("Add another book? (y/n)\n").lower()
-            if  choice == "y":
-                print(' ')
-            elif choice == "n":
-                break
-            else:
-                print("Enter 'y' or 'n'")
-        else:
-            break
-    new_id = books_df["id"].iloc[-1] + 1
-    new_author = input("Enter the author of the book: ")
-    new_publisher = input("Enter the publisher of the book: ")
-    new_categories = []
-    while True: 
-        new_categories.append(input("Enter a category of the book: "))
-        choice = input("Add another category? (y/n)\n").lower()
-        if  choice == "y":
-            print(" ")
-        elif choice == "n":
-            break
-        else:
-            print("Enter 'y' or 'n'")
-    new_cost = float(input("Add the cost of the book: "))
-    new_shipping = float(input("Add the cost of shipping: "))
-    new_avail = bool(input("Will the book be available? (True/False) : "))
-    new_copies = int(input("Add the number of copies for book: "))
-    print("Add the number of copies for each bookstore (The sum must not be > copies): ")
+    def exists(id, books_df):
+        for index in books_df.index:
+            if books_df.loc[index,'id'].item() == id:
+                return True
+        return False
+    
+
+    old_fav_list = ast.literal_eval(user_df.loc[login_id,'favorites'])   
+    new_fav_list = []
     while True:
-        bookstore1 = int(input("Add the number of copies in bookstore 1: "))
-        bookstore2 = int(input("Add the number of copies in bookstore 2: "))
-        bookstore3 = int(input("Add the number of copies in bookstore 3: "))
-        bookstore4 = int(input("Add the number of copies in bookstore 4: "))
-        bookstore5 = int(input("Add the number of copies in bookstore 5: "))
-        sum = bookstore1 + bookstore2 + bookstore3 + bookstore4 + bookstore5
-        if sum <= new_copies :
-            break
+        new_id = int(input("Enter the ID of the book: "))
+        if exists(new_id, books_df):
+            new_fav_list.append(new_id)
+            if input("Do you want to add another? (y/n): ") == "y":
+                print(" ")
+            else:
+                new_fav_list = list(set(old_fav_list + new_fav_list))
+                user_df.loc[login_id,'favorites'] = str(new_fav_list)
+
+                print(user_df)
+                
+                return user_df
         else:
-            print("Bookstores cant have more copies than copies genenerally available!!!. Check again...")
+            print("This book does not exist...")
+            if input("Do you want to add another? (y/n): ") == "y":
+                print(" ")
+            else:
+                return user_df
+
+
+def user_edit_info(user_df, login_id):
+
+    def user_exists(new_username):
+        for index in user_df.index:
+            if user_df.loc[index,'username'] == new_username:
+                print("This username is taken by another user...Try another")
+                return False
+        return True                         
+
+    #id,username,password,address,city,orders,favorites,balance
+    while True:
+        print("Choose what do you want to edit:")
+        option = input("0) Quit Editing\n1) Username\n2) Password\n3) Address\n4) City\nEnter: ")
+        if option == "0":
+            break
+        if option == "1":
+            while True:
+                new_username = input("Enter your new username: ")
+                if user_exists(new_username):
+                    user_df.loc[login_id,'username'] = new_username
+                    break           
+        elif option == "2":
+            regex = re.compile('[@_!#$%^&*()<>?/\|}{~:]')
+            while True:
+                new_password = input("Enter new password (Password must contain: 1 symbol and length > 8): ")
+                if  len(new_password) >= 8 and regex.search(new_password) != None:
+                    user_df.at[login_id,'password'] = new_password
+                    break
+                else:
+                    print("Password not strong enough...Try again")
+        elif option == "3":
+            user_df.at[login_id,'address'] = input("Enter new address: ")
+        elif option == "4":
+            user_df.at[login_id,'city'] = input("Enter new city: ")
+        else:
+            print("No such choice...Want to quit? Enter '0' ")
+    
+    print(user_df)
+    return user_df
         
 
-    new_book = pd.Series({'id':new_id,
-                        'title':new_title,
-                        'author':new_author,
-                        'publisher':new_publisher,
-                        'categories':new_categories,
-                        'cost':new_cost,
-                        'shipping':new_shipping,
-                        'availability':new_avail,
-                        'copies':new_copies,
-                        'bookstores':{ 1: bookstore1 , 2: bookstore2, 3: bookstore3 , 4: bookstore4, 5: bookstore5}
-                        })
-    
-    books_df = books_df.append(new_book, ignore_index = True)
 
-    print("Books have been updated!!!.\n")
-    while True:      
-        choice = input("Do you want to review the updated book list? (y/n)\n").lower()  
-        if choice == "y":
-            print(books_df)
-            break
-        elif choice == "n":
-            break
-        else:
-            print("Enter 'y' or 'n'")
-    return books_df
+
+
+
 
 
 ########################################################################################################################################################################################
@@ -186,9 +188,9 @@ books_df = pd.read_csv('books_data.csv')
 
 
 """ print("Welcome to Book Management System\nPlease specify if you are ADMIN or USER:")
-current_login.insert(0,True) if input().lower()=="admin"  else current_login.insert(0,False) """
+current_login.insert(0,True) if input().lower()=="admin"  else current_login.insert(0,False) 
 
-""" while True:
+while True:
     if current_login[0] == True:
         current_login.insert(1,login(admin_df))
         break
@@ -198,19 +200,75 @@ current_login.insert(0,True) if input().lower()=="admin"  else current_login.ins
             current_login.insert(1,login(user_df))
             break
         elif input().lower()=="2":
-            user_df = sign_up(user_df)
- """
-current_login.insert(0,True)
+            user_df = sign_up(user_df) """
+
+current_login.insert(0,False)
 current_login.insert(1,2)
 
 while True:
-    if current_login[0]:
-        choice = int(input("ADMIN Menu:\n1) Add books (more than one)\n2) Add book\nEnter your choice: "))
-        if choice == 1:
+    """ if current_login[0]:
+        choice = input("\n\nADMIN Menu:\n0) Exit\n1) Add books (more than one)\n2) Add book\n3) Edit book\n4) Delete book\n5) Export updated books catalog\n6) Find book with title\n7) Print cost of a book\n8) Cost of all books per author/publisher\nEnter your choice: ")
+        if choice == "0":
+            print("\n\nExiting...")
+            time.sleep(1)
+            print("\nByee....")
+            break
+        elif choice == "1":
             books_df = admin_add_books(books_df)
             break
-        elif choice == 2:
+        elif choice == "2":
             books_df = admin_add_single_book(books_df)
             break
-    else:
-        choice = input("USER Menu:\n1) Add books (more than one)\n2) Add book\nEnter your choice: ")
+        elif choice == "3":
+            books_df = admin_edit_book(admin_df, books_df, current_login)
+            #break
+        elif choice == "4":
+            books_df = admin_delete_book(admin_df, books_df, current_login)
+            break
+        elif choice == "5":
+            print("\nUpdated books catalog has been exported in 'updated_books.csv' file")
+            books_df.to_csv('updated_books.csv', index=False)
+            break
+        elif choice == "6":
+            admin_search_with_title(books_df)
+            break
+        elif choice == "7":
+            admin_print_cost(books_df)
+            break
+        elif choice == "8":
+            admin_print_all_cost(books_df)
+            break
+        else:
+            print("\n\nNot an option...")
+            time.sleep(1) """
+
+    if not current_login[0]:
+        choice = input("USER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\nEnter your choice: ")
+        if choice == "0":
+            print("\n\nExiting...")
+            time.sleep(1)
+            print("\nByee....")
+            break
+        elif choice == "1":
+            user_df = user_add_favorites(user_df, current_login[1])
+            break
+        elif choice == "2":
+            user_df = user_add_single_favorite(user_df, books_df, current_login[1])
+            break
+        elif choice == "3":
+            user_df =  user_edit_info(user_df, current_login[1])
+            print(user_df)
+            break
+        elif choice == "4":
+            break
+        elif choice == "5":
+            break
+        elif choice == "6":
+            break
+        elif choice == "7":
+            break
+        elif choice == "8":
+            break
+        else:
+            print("\n\nNot an option...")
+            time.sleep(1)

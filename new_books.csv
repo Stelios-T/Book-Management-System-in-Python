@@ -1,4 +1,4 @@
 id,title,author,publisher,categories,cost,shipping,availability,copies,bookstores
-45,Asami Asami,Deshpande,Mauj,"['fiction', 'novel']",47.6,2.5,True,15,"{1: 0, 2: 0, 3: 0, 4: 7, 5: 8}"
-46,Journal of a Novel,Steinbeck,Penguin,"['fiction', 'classic']",20.7,2.0,True,4,"{1: 0, 2: 1, 3: 1, 4: 1, 5: 1}"
-47,Once There Was a War,Steinbeck,Penguin,"['nonfiction', 'history']",22.6,1.5,True,7,"{1: 2, 2: 2, 3: 0, 4: 3, 5: 0}"
+0,Asami Asami,Deshpande,Mauj,"['fiction', 'novel']",47.6,2.5,True,15,"{1: 0, 2: 0, 3: 0, 4: 7, 5: 8}"
+0,Journal of a Novel,Steinbeck,Penguin,"['fiction', 'classic']",20.7,2.0,True,4,"{1: 0, 2: 1, 3: 1, 4: 1, 5: 1}"
+0,Once There Was a War,Steinbeck,Penguin,"['nonfiction', 'history']",22.6,1.5,True,7,"{1: 2, 2: 2, 3: 0, 4: 3, 5: 0}"
