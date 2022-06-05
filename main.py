@@ -10,6 +10,8 @@ import warnings
 from hashlib import new
 import time
 import ast
+import sys
+
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -36,6 +38,7 @@ def login(df):
             print("Too many failed tries. Exiting...")
             exit()
        
+
 
 def sign_up(df):
 
@@ -79,6 +82,7 @@ def sign_up(df):
             print("Password not strong enough. Try different password")
 
 
+
 def user_add_favorites(user_df, login_id):
     
     new_favorites_df = pd.read_csv('new_favorites.csv')
@@ -94,6 +98,7 @@ def user_add_favorites(user_df, login_id):
     user_df.loc[login_id,'favorites'] = str(new_fav_list)
     
     return user_df
+
 
 
 def user_add_single_favorite(user_df, books_df, login_id):
@@ -116,8 +121,6 @@ def user_add_single_favorite(user_df, books_df, login_id):
             else:
                 new_fav_list = list(set(old_fav_list + new_fav_list))
                 user_df.loc[login_id,'favorites'] = str(new_fav_list)
-
-                print(user_df)
                 
                 return user_df
         else:
@@ -126,6 +129,7 @@ def user_add_single_favorite(user_df, books_df, login_id):
                 print(" ")
             else:
                 return user_df
+
 
 
 def user_edit_info(user_df, login_id):
@@ -165,13 +169,172 @@ def user_edit_info(user_df, login_id):
         else:
             print("No such choice...Want to quit? Enter '0' ")
     
-    print(user_df)
     return user_df
+
+
+
+def user_empty_favorites(user_df,login_id):
+    
+    user_df.loc[login_id,'favorites'] = "[]"
+    time.sleep(1.5)
+    print("\nFavorites list emptied...\n")
+
+
+    
+def user_check_balance(user_df, login_id):
+    time.sleep(0.5)
+    print("\nPlease Wait...\n")
+    time.sleep(1)
+    print("Your Balance Amount is: "+str(user_df.loc[login_id,'balance'])+" $")
+
+
+
+def user_check_favorites(user_df, books_df, login_id):
+
+    fav_list = ast.literal_eval(user_df.loc[login_id,'favorites'])
+
+    if fav_list:
+        print("\nYour list of favorites contains: \n")
+        for i in fav_list:
+            for index in books_df.index:
+                if books_df.loc[index,'id'] == i:
+                    print("ID: "+str(books_df.loc[index,'id'])+" | Title: "+str(books_df.loc[index,'title'])+" | Author: "+str(books_df.loc[index,'author']))
+        while True:
+            choice = input("\nChoose which book you want to check (Choose books separated by ',' or enter 'all' for all): ")
+            try:
+                if choice == "all":
+                    for i in fav_list:
+                        for index in books_df.index:
+                            if books_df.loc[index,'id'] == i:
+                                print("Book ID: "+str(books_df.loc[index,'id'])+" | Title: "+str(books_df.loc[index,'title'])+" | Availability: "+str(books_df.loc[index,'availability'])+" | Total cost: "+str(books_df.loc[index,'cost']+books_df.loc[index,'shipping']))
+                elif choice.isdigit(): 
+                    choice = int(choice)
+                    print("\nBook ID: "+str(books_df.loc[choice,'id'])+" | Title: "+str(books_df.loc[choice,'title'])+" | Availability: "+str(books_df.loc[choice,'availability'])+" | Total cost: "+str(books_df.loc[choice,'cost']+books_df.loc[choice,'shipping']))
+               
+                else:
+                        print("\n")
+                        list = ast.literal_eval(choice)
+                        for i in list:
+                            for index in books_df.index:
+                                if books_df.loc[index,'id'] == i:
+                                    print("Book ID: "+str(books_df.loc[index,'id'])+" | Title: "+str(books_df.loc[index,'title'])+" | Availability: "+str(books_df.loc[index,'availability'])+" | Total cost: "+str(books_df.loc[index,'cost']+books_df.loc[index,'shipping']))
+                #break
+            except:
+                print("Oops! No such choice. Try again....")
+            choice = input("\nDo you want to check another book? (y/n): ").lower()
+            if choice == "y":
+                print("")
+            elif choice == "n":
+                break
+            else:
+                print("Oops! Choose either 'y' or 'n'. Try again....")
+    else:
+        print("You have no favorites, to add favorites select '1' or '2' option from the menu...")
+
+
+
+def user_orders_total(user_df, books_df, login_id):
+
+    orders_list = ast.literal_eval(user_df.loc[login_id,'orders'])
+
+    total_cost = 0
+    if orders_list:
+        print("\nYour orders are: \n\n")
+        for i in orders_list:
+            for index in books_df.index:
+                if books_df.loc[index,'id'] == i:
+                    print("Book ID: "+str(books_df.loc[index,'id'])+"\nTitle: "+str(books_df.loc[index,'title'])+"\nAuthor: "+str(books_df.loc[index,'author'])+"\nBook cost: "+str(books_df.loc[index,'cost'])+"$"+"\nShipping cost: "+str(books_df.loc[index,'shipping'])+"$"+"\n")
+                    total_cost += books_df.loc[index,'cost']+books_df.loc[index,'shipping']
+    print("\nBringing your total cost of all books up to: "+str(total_cost)+"$")
+
+
+
+def user_place_order(user_df, books_df, login_id):
+
+    def exists(id, books_df):
+        for index in books_df.index:
+            if books_df.loc[index,'id'].item() == id:
+                return True
+        return False
+
+    if input("\nDo you want to first see the catalog of book? (y): ").lower() == "y":
+        print(books_df[['id', 'title', 'author', 'publisher', 'categories', 'cost', 'shipping']])
+        print("\n!Note!: Some books that appear on the catalog may not be available\n")
+    
+
+    balance = float(user_df.loc[login_id,'balance'])
+    old_order_list = ast.literal_eval(user_df.loc[login_id,'orders'])   
+    new_order_list = []
+
+    while True:
         
+        new_id = int(input("Enter the ID of the book you want to order: "))
+        if (new_id in old_order_list):
+            print("This books has already been ordered...")
+            continue
+
+        if exists(new_id, books_df):
+
+            print("The total cost will be: "+str(books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping']))
+            if input("Are you sure you want to order this book? (y): ") == "y":
+                new_order_list.append(new_id)
+                if balance - books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping'] < 0:
+                    print("Your balance is not enough for this order...")
+                    continue
+
+                else:
+                    balance -= books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping']
+            else:
+                continue
+
+            if input("Do you want to order another book? (y): ") == "y":
+                old_order_list = list(set(old_order_list + new_order_list))
+                continue
+            else:
+                new_order_list = list(set(old_order_list + new_order_list))
+                user_df.loc[login_id,'orders'] = str(new_order_list)
+                user_df.loc[login_id,'balance'] = str(balance)
+                
+                return user_df
+        else:
+            print("This book does not exist...")
+            if input("Do you want to order another book? (y): ") == "y":
+                print(" ")
+            else:
+                return user_df
 
 
 
 
+def user_cancel_order(user_df, books_df, login_id):
+
+    if input("\nDo you want to first see your orders? (y): ").lower() == "y":
+        user_orders_total(user_df, books_df, login_id)
+    
+
+    balance = float(user_df.loc[login_id,'balance'])
+    order_list = ast.literal_eval(user_df.loc[login_id,'orders'])   
+    while True:
+        
+        new_id = int(input("Enter the ID of the book you want to cancel: "))
+        if not (new_id in order_list):
+            print("This book is not on your orders...")
+            continue
+        else:
+            print("The total cost that will be returned to your wallet is: "+str(books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping']))
+            if input("\nAre you sure you want to cancel this book? (y): ") == "y":
+                order_list.remove(new_id)
+                balance += books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping']
+            else:
+                continue
+
+            if input("Do you want to cancel another book? (y): ") == "y":
+                continue
+            else:
+                user_df.loc[login_id,'orders'] = str(order_list)
+                user_df.loc[login_id,'balance'] = str(balance)
+                
+                return user_df
 
 
 
@@ -203,7 +366,7 @@ while True:
             user_df = sign_up(user_df) """
 
 current_login.insert(0,False)
-current_login.insert(1,2)
+current_login.insert(1,1)
 
 while True:
     """ if current_login[0]:
@@ -243,7 +406,7 @@ while True:
             time.sleep(1) """
 
     if not current_login[0]:
-        choice = input("USER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\nEnter your choice: ")
+        choice = input("USER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\n4) Empty favoritres list\n5) Check Balance\n6) Check price from favorites\n7) Check your orders\n8) Place Order \n9) Cancel Order \nEnter your choice: ")
         if choice == "0":
             print("\n\nExiting...")
             time.sleep(1)
@@ -260,14 +423,24 @@ while True:
             print(user_df)
             break
         elif choice == "4":
+            user_df = user_empty_favorites(user_df, current_login[1])
             break
         elif choice == "5":
+            user_check_balance(user_df, current_login[1])
             break
         elif choice == "6":
+            user_check_favorites(user_df, books_df, current_login[1])
             break
         elif choice == "7":
+            user_orders_total(user_df, books_df, current_login[1])
             break
         elif choice == "8":
+            user_df = user_place_order(user_df, books_df, current_login[1])
+            break
+        elif choice == "9":
+            print(user_df)
+            user_df = user_cancel_order(user_df, books_df, current_login[1])
+            print(user_df)
             break
         else:
             print("\n\nNot an option...")
