@@ -253,7 +253,7 @@ def user_place_order(user_df, books_df, login_id):
 
     def exists(id, books_df):
         for index in books_df.index:
-            if books_df.loc[index,'id'].item() == id:
+            if books_df.loc[index,'id'].item() == id and books_df.loc[index,'availability'].item() == "True":
                 return True
         return False
 
@@ -297,12 +297,11 @@ def user_place_order(user_df, books_df, login_id):
                 
                 return user_df
         else:
-            print("This book does not exist...")
+            print("This book does not exist or it's not available for ordering...")
             if input("Do you want to order another book? (y): ") == "y":
                 print(" ")
             else:
                 return user_df
-
 
 
 
@@ -338,6 +337,49 @@ def user_cancel_order(user_df, books_df, login_id):
 
 
 
+def user_check_book_for_order(user_df, books_df, login_id):
+    
+
+    def exists(id, books_df):
+        for index in books_df.index:
+            if books_df.loc[index,'id'].item() == id and books_df.loc[index,'availability'] == True:
+                return True
+        return False
+
+    if input("\nDo you want to first see the catalog of book? (y): ").lower() == "y":
+        print(books_df[['id', 'title', 'author', 'publisher', 'categories', 'cost', 'shipping']])
+        print("\n!Note!: Some books that appear on the catalog may not be available\n")
+    
+
+
+    while True:
+        
+        new_id = int(input("Enter the ID of the book you would like to check copies for: "))
+
+        balance = user_df.loc[login_id,'balance']
+        aval_copies = books_df.loc[new_id,'copies']
+        book_cost = books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping']
+        copies = 0
+
+        if exists(new_id, books_df):
+
+            while balance - book_cost >= 0 and aval_copies >= 0:
+                balance -= book_cost
+                aval_copies -= 1
+                copies += 1
+            
+            print("You can order "+str(copies)+" amount of copies ")
+            return
+
+        else:
+            print("This book does not exist or it's not available for ordering...")
+            if input("Do you want to check copies for another book? (y): ") == "y":
+                print(" ")
+            else:
+                return 
+
+
+
 ########################################################################################################################################################################################
 #################################################################################################################################################################################################           
 
@@ -359,18 +401,17 @@ while True:
         break
     elif current_login[0] == False:
         print("1) Log In\n2) Sign Up")
-        if input().lower()=="1":
             current_login.insert(1,login(user_df))
             break
         elif input().lower()=="2":
             user_df = sign_up(user_df) """
 
-current_login.insert(0,False)
-current_login.insert(1,1)
+current_login.insert(0, True)
+current_login.insert(1, 2)
 
 while True:
     """ if current_login[0]:
-        choice = input("\n\nADMIN Menu:\n0) Exit\n1) Add books (more than one)\n2) Add book\n3) Edit book\n4) Delete book\n5) Export updated books catalog\n6) Find book with title\n7) Print cost of a book\n8) Cost of all books per author/publisher\nEnter your choice: ")
+        choice = input("\n\nADMIN Menu:\n0) Exit\n1) Add books (more than one)\n2) Add book\n3) Edit book\n4) Delete book\n5) Export updated books catalog\n6) Find book with title\n7) Print cost of a book\n8) Cost of all books per author/publisher\n9) Delete a user\nEnter your choice: ")
         if choice == "0":
             print("\n\nExiting...")
             time.sleep(1)
@@ -401,12 +442,15 @@ while True:
         elif choice == "8":
             admin_print_all_cost(books_df)
             break
+        elif choice == "9":
+            user_df = admin_delete_user(user_df)
+            break
         else:
             print("\n\nNot an option...")
             time.sleep(1) """
 
     if not current_login[0]:
-        choice = input("USER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\n4) Empty favoritres list\n5) Check Balance\n6) Check price from favorites\n7) Check your orders\n8) Place Order \n9) Cancel Order \nEnter your choice: ")
+        choice = input("USER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\n4) Empty favoritres list\n5) Check Balance\n6) Check price from favorites\n7) Check your orders\n8) Place Order \n9) Cancel Order \n10) Check number of copies you can order from a book \nEnter your choice: ")
         if choice == "0":
             print("\n\nExiting...")
             time.sleep(1)
@@ -441,6 +485,9 @@ while True:
             print(user_df)
             user_df = user_cancel_order(user_df, books_df, current_login[1])
             print(user_df)
+            break
+        elif choice == "10":
+            user_check_book_for_order(user_df, books_df, current_login[1])
             break
         else:
             print("\n\nNot an option...")

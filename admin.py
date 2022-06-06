@@ -352,3 +352,30 @@ def admin_print_all_cost(books_df):
                 print("Publisher: "+str(i)+" | Cost of books: "+str(avarage_cost[i])+"\n")
             
             break 
+
+
+def admin_delete_user(user_df):
+
+    def user_exists(new_username):
+        for index in user_df.index:
+            if user_df.loc[index,'username'] == new_username:
+                return True
+        return False 
+    
+    if input("\nDo you want to see the list of users? (y): ").lower() == "y":
+        print(user_df)
+    
+
+    while True:
+        username = input("Enter the username of user you want to delete: ")
+        if user_exists(username):
+                user_df = user_df[user_df.username != username]
+                break
+        else:
+            if input("This username does not exist or you mistyped his username...Want to try again? (y):") == "y":
+                print("")
+            else:
+                break
+
+    
+    return user_df
