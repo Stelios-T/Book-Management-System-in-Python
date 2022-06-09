@@ -11,9 +11,18 @@ from hashlib import new
 import time
 import ast
 import sys
-
+import matplotlib.pyplot as plt
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
+
+
+def import_dataframes():
+    return pd.read_csv('admin_data.csv'), pd.read_csv('user_data.csv'), pd.read_csv('books_data.csv')
+
+def export_dataframes(admin_df, user_df, books_df):
+    admin_df.to_csv('admin_data.csv', index=False)
+    user_df.to_csv('user_data.csv', index=False)
+    books_df.to_csv('books_data.csv', index=False)
 
 
 def login(df):
@@ -38,7 +47,6 @@ def login(df):
             print("Too many failed tries. Exiting...")
             exit()
        
-
 
 def sign_up(df):
 
@@ -380,6 +388,173 @@ def user_check_book_for_order(user_df, books_df, login_id):
 
 
 
+def user_add_comments(books_df, login_id):
+
+    def exists(id, books_df):
+        for index in books_df.index:
+            if books_df.loc[index,'id'].item() == id:
+                return True
+        return False
+
+    
+    if input("\nDo you want to first see the catalog of book? (y): ").lower() == "y":
+        print(books_df[['id', 'title', 'author', 'publisher', 'categories', 'cost', 'shipping']])
+
+    
+    while True:
+
+        new_id = int(input("Enter the ID of the book you want to comment: "))
+        if exists(new_id, books_df):
+
+            try :
+                comments = ast.literal_eval(books_df.loc[new_id,"comments"])
+            except:
+                comments = {}
+
+            while True:
+                rating = input("Enter the rating of the book (1-5): ")
+                if int(rating)>=1 and int(rating)<=5:
+                    break
+                else:
+                    print("Rating can only range from 1 to 5...Try again")
+                    continue
+                    
+
+            comment_text = input("Enter the comment of the book: ")
+
+            comments[login_id] = [rating, comment_text]
+
+            books_df.loc[new_id,'comments'] = str(comments)
+
+
+            if input("Do you want to comment another book? (y): ") == "y":
+                continue
+            else:
+                return books_df
+        else:
+            print("This book does not exist...")
+            if input("Do you want to comment another book? (y): ") == "y":
+                print(" ")
+            else:
+                return books_df
+
+
+
+def admin_print_plots(books_df, user_df):
+
+    def remove_duplicate(list):
+        temp_list = []
+        for i in list:
+            if i not in temp_list:
+                temp_list.append(i)
+        return temp_list
+    
+    def print_plot(list, col):
+        
+        count_copies = []
+        i = 0
+        for ele in list:
+            copies = 0
+            for index in books_df.index:
+                if books_df.loc[index,col] == ele:
+                    copies += books_df.loc[index,'copies']
+            count_copies.insert(i, copies)       
+            i += 1
+
+            plt.plot(list, count_copies)
+
+    def print_plot_without_copies(list, col):
+
+        count = []
+        for ele in list:
+            count.append(len(books_df[books_df[col] == ele]))
+        
+        plt.plot(list, count)
+    
+    def print_category_plot(categories):
+        categories_no_copies = [0]*len(categories)
+        categories_with_copies = [0]*len(categories)
+        for index in books_df.index:
+            for element in ast.literal_eval(books_df.loc[index,'categories']):
+                i = 0
+                for category in categories:
+                    if element == category:
+                        categories_no_copies[i] += 1
+                        categories_with_copies[i] += books_df.loc[index,'copies']
+                    i += 1
+                    
+        plt.plot(categories, categories_no_copies)
+        plt.plot(categories, categories_with_copies) 
+    
+
+    publishers = []
+    authors = []
+    categories = []
+    bookstores_copies = [0]*5
+    cost = []
+
+    for index in books_df.index:
+        publishers.append(books_df.loc[index,'publisher'])
+        authors.append(books_df.loc[index,'author'])
+        for ele in ast.literal_eval(books_df.loc[index,'categories']):
+            categories.append(ele)
+        for i in range(0,5):
+            """ bookstores[0] += bookstore_copies[1]
+            bookstores[1] += bookstore_copies[2]
+            bookstores[2] += bookstore_copies[3]
+            bookstores[3] += bookstore_copies[4]
+            bookstores[4] += bookstore_copies[5] """
+            bookstores_copies[i] += ast.literal_eval(books_df.loc[index,'bookstores'])[i+1]
+        if books_df.loc[index,'availability'] == True:
+            cost.append(books_df.loc[index,'cost'])
+
+    publishers = remove_duplicate(publishers)
+    authors = remove_duplicate(authors)
+    categories = remove_duplicate(categories)
+
+    bookstores = []
+    for i in range(0,5): bookstores.append("Bookstore "+str(i+1))    
+
+
+
+    #city
+    cities = []
+    for index in user_df.index:
+            cities.append(user_df.loc[index,'city'])
+
+    cities = remove_duplicate(cities)
+
+    cities_numb = [0]*len(cities)
+    for index in user_df.index:
+                i = 0
+                for city in cities:
+                    if city == user_df.loc[index,'city']:
+                        cities_numb[i] += 1
+                    i += 1        
+
+
+    plt.figure(figsize=(25, 10))
+    plt.plot(cost)
+
+#    plt.plot(cities, cities_numb)
+
+
+
+#    plt.plot(bookstores, bookstores_copies)
+
+
+
+#    print_category_plot(categories)
+
+#    print_plot(publishers,"publisher")
+#    print_plot(authors,"author")
+
+#    print_plot_without_copies(publishers,"publisher")
+#    print_plot_without_copies(authors,"author")
+
+
+    
+
 ########################################################################################################################################################################################
 #################################################################################################################################################################################################           
 
@@ -387,9 +562,15 @@ def user_check_book_for_order(user_df, books_df, login_id):
 #[False/True] [id]
 current_login = []
 
-admin_df = pd.read_csv('admin_data.csv')
-user_df = pd.read_csv('user_data.csv')
-books_df = pd.read_csv('books_data.csv')
+admin_df, user_df, books_df = import_dataframes()
+
+""" print(admin_df)
+print(user_df)
+print(books_df) """
+
+
+#adding comments columm to books dataframe
+books_df["comments"] = np.nan
 
 
 """ print("Welcome to Book Management System\nPlease specify if you are ADMIN or USER:")
@@ -410,8 +591,8 @@ current_login.insert(0, True)
 current_login.insert(1, 2)
 
 while True:
-    """ if current_login[0]:
-        choice = input("\n\nADMIN Menu:\n0) Exit\n1) Add books (more than one)\n2) Add book\n3) Edit book\n4) Delete book\n5) Export updated books catalog\n6) Find book with title\n7) Print cost of a book\n8) Cost of all books per author/publisher\n9) Delete a user\nEnter your choice: ")
+    if current_login[0]:
+        choice = input("\n\nADMIN Menu:\n0) Exit\n1) Add books (more than one)\n2) Add book\n3) Edit book\n4) Delete book\n5) Export updated books catalog\n6) Find book with title\n7) Print cost of a book\n8) Cost of all books per author/publisher\n9) Delete a user\n10) Print plots\nEnter your choice: ")
         if choice == "0":
             print("\n\nExiting...")
             time.sleep(1)
@@ -422,7 +603,7 @@ while True:
             break
         elif choice == "2":
             books_df = admin_add_single_book(books_df)
-            break
+            
         elif choice == "3":
             books_df = admin_edit_book(admin_df, books_df, current_login)
             #break
@@ -445,12 +626,15 @@ while True:
         elif choice == "9":
             user_df = admin_delete_user(user_df)
             break
+        elif choice == "10":
+            admin_print_plots(books_df, user_df)
+            break
         else:
             print("\n\nNot an option...")
-            time.sleep(1) """
+            time.sleep(1)
 
     if not current_login[0]:
-        choice = input("USER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\n4) Empty favoritres list\n5) Check Balance\n6) Check price from favorites\n7) Check your orders\n8) Place Order \n9) Cancel Order \n10) Check number of copies you can order from a book \nEnter your choice: ")
+        choice = input("USER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\n4) Empty favoritres list\n5) Check Balance\n6) Check price from favorites\n7) Check your orders\n8) Place Order \n9) Cancel Order \n10) Check number of copies you can order from a book \n11) Add comment\nEnter your choice: ")
         if choice == "0":
             print("\n\nExiting...")
             time.sleep(1)
@@ -489,6 +673,19 @@ while True:
         elif choice == "10":
             user_check_book_for_order(user_df, books_df, current_login[1])
             break
+        elif choice == "11":
+            books_df = user_add_comments(books_df, current_login[1])
+            print(books_df)
+
+            """ books_df.to_csv('books_test.csv', index=False)
+            books_df = pd.read_csv('books_test.csv')
+
+            print(books_df.loc[43,"comments"])
+            print(books_df.loc[43,"comments"][2]) """
+            break
         else:
             print("\n\nNot an option...")
             time.sleep(1)
+
+
+#export_dataframes(admin_df, user_df, books_df)

@@ -15,8 +15,6 @@ def admin_add_books(books_df):
     
     new_books_df = pd.read_csv('new_books.csv')
 
-    #id = books_df["id"].iloc[-1]
-
     books_df = books_df.append(new_books_df, ignore_index = True)
     books_df.drop_duplicates(subset ="title",keep = 'first', inplace = True)
 
@@ -39,18 +37,23 @@ def admin_add_books(books_df):
 
 def admin_add_single_book(books_df):
 
+    def exists(title, books_df):
+        for index in books_df.index:
+            if books_df.loc[index,'title'].lower() == title.lower():
+                return True
+        return False
+
     #id,title,author,publisher,categories,cost,shipping,availability,copies,bookstores
     while True: 
         new_title = input("Enter the title of the book: ")
-        if not books_df.loc[books_df['title'] == new_title].empty:
-            print("This book is already in the list!!!\n")
-            choice = input("Add another book? (y/n)\n").lower()
+        if exists(new_title, books_df):
+            choice = input("This book is already in the catalog!!!\nTry adding some other book? (y/n): ").lower()
             if  choice == "y":
                 print(' ')
             elif choice == "n":
                 break
             else:
-                print("Enter 'y' or 'n'")
+                print("Enter only 'y' or 'n'")
         else:
             break
     new_id = books_df["id"].iloc[-1] + 1
@@ -66,17 +69,40 @@ def admin_add_single_book(books_df):
             break
         else:
             print("Enter 'y' or 'n'")
-    new_cost = float(input("Add the cost of the book: "))
-    new_shipping = float(input("Add the cost of shipping: "))
+    
+    while True:
+        try:
+            new_cost = float(input("Add the cost of the book: "))
+            break
+        except:
+            print("Only float number is acceptable!!! (ex 4.6, 30.8) ")
+    while True:
+        try:
+            new_shipping = float(input("Add the cost of shipping: "))
+            break
+        except:
+            print("Only float number is acceptable!!! (ex 4.6, 30.8) ")
     new_avail = bool(input("Will the book be available? (True/False) : "))
-    new_copies = int(input("Add the number of copies for book: "))
+    while True:
+        try:
+            new_copies = int(input("Add the number of copies for book: "))            
+            break
+        except:
+            print("Only integer number is acceptable!!! (ex 4, 30) ")
+    
     print("Add the number of copies for each bookstore (The sum must not be > copies): ")
     while True:
-        bookstore1 = int(input("Add the number of copies in bookstore 1: "))
-        bookstore2 = int(input("Add the number of copies in bookstore 2: "))
-        bookstore3 = int(input("Add the number of copies in bookstore 3: "))
-        bookstore4 = int(input("Add the number of copies in bookstore 4: "))
-        bookstore5 = int(input("Add the number of copies in bookstore 5: "))
+        while True:
+            try:
+                bookstore1 = int(input("Add the number of copies in Bookstore 1: "))
+                bookstore2 = int(input("Add the number of copies in Bookstore 2: "))
+                bookstore3 = int(input("Add the number of copies in Bookstore 3: "))
+                bookstore4 = int(input("Add the number of copies in Bookstore 4: "))
+                bookstore5 = int(input("Add the number of copies in Bookstore 5: "))            
+                break
+            except:
+                print("Only integer number is acceptable!!! (ex 4, 30) ")
+        
         sum = bookstore1 + bookstore2 + bookstore3 + bookstore4 + bookstore5
         if sum == new_copies :
             break
@@ -205,6 +231,7 @@ def admin_edit_book(admin_df, books_df, login):
     
     if not flag_exists:
         print("\nSeems like this book does not exist. To add it select option '2' from the menu...\n")       
+
 
 #eroor, most likely need to write back to csv 
 def admin_delete_book(admin_df, books_df, login):
