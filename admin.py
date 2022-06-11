@@ -1,14 +1,17 @@
 # import pandas as pd
 import pandas as pd
+import numpy as np
 import re
 from numpy import empty
 from unicodedata import category
 import warnings
 from hashlib import new
 import time
+import ast
+import sys
+import matplotlib.pyplot as plt
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
 
 
 def admin_add_books(books_df):
@@ -406,3 +409,140 @@ def admin_delete_user(user_df):
 
     
     return user_df
+
+
+def admin_print_plots(books_df, user_df):
+
+    def remove_duplicate(list):
+        temp_list = []
+        for i in list:
+            if i not in temp_list:
+                temp_list.append(i)
+        return temp_list
+    
+    def print_plot(list, col):
+        
+        count_copies = [0]*len(list)
+        i = 0
+        for ele in list:
+            copies = 0
+            for index in books_df.index:
+                if books_df.loc[index,col] == ele:
+                    copies += books_df.loc[index,'copies']
+            count_copies[i] = copies       
+            i += 1
+
+        plt.plot(list, count_copies)
+
+    def print_plot_without_copies(list, col):
+
+        count = []
+        for ele in list:
+            count.append(len(books_df[books_df[col] == ele]))
+        
+        plt.plot(list, count)
+    
+    def print_category_plot_with_copies(categories):
+        categories_with_copies = [0]*len(categories)
+        for index in books_df.index:
+            for element in ast.literal_eval(books_df.loc[index,'categories']):
+                i = 0
+                for category in categories:
+                    if element == category:
+                        categories_with_copies[i] += books_df.loc[index,'copies']
+                    i += 1
+                    
+        plt.plot(categories, categories_with_copies) 
+        
+        
+    def print_category_plot(categories):
+        categories_no_copies = [0]*len(categories)
+        for index in books_df.index:
+            for element in ast.literal_eval(books_df.loc[index,'categories']):
+                i = 0
+                for category in categories:
+                    if element == category:
+                        categories_no_copies[i] += 1
+                    i += 1
+                    
+        plt.plot(categories, categories_no_copies)
+ 
+    
+
+    publishers = []
+    authors = []
+    categories = []
+    bookstores_copies = [0]*5
+    cost = []
+
+    for index in books_df.index:
+        publishers.append(books_df.loc[index,'publisher'])
+        authors.append(books_df.loc[index,'author'])
+        for ele in ast.literal_eval(books_df.loc[index,'categories']):
+            categories.append(ele)
+        for i in range(0,5):
+            """ bookstores[0] += bookstore_copies[1]
+            bookstores[1] += bookstore_copies[2]
+            bookstores[2] += bookstore_copies[3]
+            bookstores[3] += bookstore_copies[4]
+            bookstores[4] += bookstore_copies[5] """
+            bookstores_copies[i] += ast.literal_eval(books_df.loc[index,'bookstores'])[i+1]
+        if books_df.loc[index,'availability'] == True:
+            cost.append(books_df.loc[index,'cost'])
+
+    publishers = remove_duplicate(publishers)
+    authors = remove_duplicate(authors)
+    categories = remove_duplicate(categories)
+
+
+    bookstores = []
+    for i in range(0,5): bookstores.append("Bookstore "+str(i+1))    
+
+    #city
+    cities = []
+    for index in user_df.index:
+            cities.append(user_df.loc[index,'city'])
+
+    cities = remove_duplicate(cities)
+
+    cities_numb = [0]*len(cities)
+    for index in user_df.index:
+                i = 0
+                for city in cities:
+                    if city == user_df.loc[index,'city']:
+                        cities_numb[i] += 1
+                    i += 1        
+
+
+    plt.figure(figsize=(40, 10))
+    while True:
+        choice = input("Available plots:\n   1) Cost for books\n   2) Cities per user\n   3) Bookstore copies\n   4) Publishers\n   5) Publishers (with copies)\n   6) Authors\n   7) Authors (with copies)\n   8) Categories (no copies)\n   9) Categories\nEnter your option: ")
+        if choice == "1":
+            plt.plot(cost)
+            break
+        elif choice == "2":
+            plt.plot(cities, cities_numb)
+            break
+        elif choice == "3":
+            plt.plot(bookstores, bookstores_copies)
+            break
+        elif choice == "4":
+            print_plot(publishers,"publisher")
+            break
+        elif choice == "5":
+            print_plot_without_copies(publishers,"publisher")
+            break
+        elif choice == "6":
+            print_plot(authors,"author")
+            break
+        elif choice == "7":
+            print_plot_without_copies(authors,"author")
+            break
+        elif choice == "8":
+            print_category_plot(categories)
+            break
+        elif choice == "9":
+            print_category_plot_with_copies(categories)
+            break
+        else:
+            print("No such choice...")
