@@ -18,12 +18,12 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def import_dataframes():
-    return pd.read_csv('admin_data.csv'), pd.read_csv('user_data.csv'), pd.read_csv('books_data.csv')
+    return pd.read_csv('csv/admin_data.csv'), pd.read_csv('csv/user_data.csv'), pd.read_csv('csv/books_data.csv')
 
 def export_dataframes(admin_df, user_df, books_df):
-    admin_df.to_csv('admin_data.csv', index=False)
-    user_df.to_csv('user_data.csv', index=False)
-    books_df.to_csv('books_data.csv', index=False)
+    admin_df.to_csv('csv/admin_data.csv', index=False)
+    user_df.to_csv('csv/user_data.csv', index=False)
+    books_df.to_csv('csv/books_data.csv', index=False)
 
 
 def login(df):
@@ -164,7 +164,7 @@ while True:
             
         elif choice == "5":
             print("\nUpdated books catalog has been exported in 'updated_books.csv' file")
-            books_df.to_csv('updated_books.csv', index=False)
+            books_df.to_csv('csv/updated_books.csv', index=False)
             
         elif choice == "6":
             admin_search_with_title(books_df)
@@ -186,7 +186,7 @@ while True:
 
     if not current_login[0]:
         time.sleep(1)
-        choice = input("\n\nUSER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\n4) Empty favoritres list\n5) Check Balance\n6) Check price from favorites\n7) Check your orders\n8) Place Order \n9) Cancel Order \n10) Check number of copies you can order from a book \n11) Add comment\nEnter your choice: ")
+        choice = input("\n\nUSER Menu:\n0) Exit\n1) Add books to favorites (more than one)\n2) Add book to favorites\n3) Edit personal info\n4) Empty favoritres list\n5) Check Balance\n6) Check price from favorites\n7) Check your orders\n8) Place Order \n9) Cancel Order \n10) Check number of copies you can order from a book \n11) Add comment\n12) Get recommends\nEnter your choice: ")
         if choice == "0":
             print("\n\nExiting...")
             print("\nByee....")
@@ -224,7 +224,10 @@ while True:
             
         elif choice == "11":
             books_df = user_add_comments(books_df, current_login[1])
-            
+
+        elif choice == "12":
+            user_get_recommends(books_df, user_df, current_login[1])
+
         else:
             print("\n\nNot an option...")
 

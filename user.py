@@ -9,6 +9,7 @@ from hashlib import new
 import time
 import ast
 import sys
+import random
 import matplotlib.pyplot as plt
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -17,7 +18,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def user_add_favorites(user_df, login_id):
     
-    new_favorites_df = pd.read_csv('new_favorites.csv')
+    new_favorites_df = pd.read_csv('csv/new_favorites.csv')
 
     old_fav_list = ast.literal_eval(user_df.loc[login_id,'favorites'])
     
@@ -177,6 +178,9 @@ def user_orders_total(user_df, books_df, login_id):
                 if books_df.loc[index,'id'] == i:
                     print("Book ID: "+str(books_df.loc[index,'id'])+"\nTitle: "+str(books_df.loc[index,'title'])+"\nAuthor: "+str(books_df.loc[index,'author'])+"\nBook cost: "+str(books_df.loc[index,'cost'])+"$"+"\nShipping cost: "+str(books_df.loc[index,'shipping'])+"$"+"\n")
                     total_cost += books_df.loc[index,'cost']+books_df.loc[index,'shipping']
+    else:
+        print("No favorites is list...")
+
     print("\nBringing your total cost of all books up to: "+str(total_cost)+"$")
 
 
@@ -185,7 +189,7 @@ def user_place_order(user_df, books_df, login_id):
 
     def exists(id, books_df):
         for index in books_df.index:
-            if books_df.loc[index,'id'].item() == id and books_df.loc[index,'availability'].item() == "True":
+            if books_df.loc[index,'id'].item() == id and books_df.loc[index,'availability'] == True:
                 return True
         return False
 
@@ -288,13 +292,12 @@ def user_check_book_for_order(user_df, books_df, login_id):
         
         new_id = int(input("Enter the ID of the book you would like to check copies for: "))
 
-        balance = user_df.loc[login_id,'balance']
+        balance = float(user_df.loc[login_id,'balance'])
         aval_copies = books_df.loc[new_id,'copies']
-        book_cost = books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping']
+        book_cost = float(books_df.loc[new_id,'cost'] + books_df.loc[new_id,'shipping'])
         copies = 0
 
         if exists(new_id, books_df):
-
             while balance - book_cost >= 0 and aval_copies >= 0:
                 balance -= book_cost
                 aval_copies -= 1
@@ -361,3 +364,31 @@ def user_add_comments(books_df, login_id):
                 print(" ")
             else:
                 return books_df
+
+
+
+def user_get_recommends(books_df, user_df, login_id):
+
+    def most_frequent(List):
+        return max(set(List), key = List.count)
+
+    fav_list = ast.literal_eval(user_df.loc[login_id,'favorites'])
+    categories_list = []
+
+    total_cost = 0
+    if fav_list:
+        for i in fav_list:
+            for index in books_df.index:
+                if books_df.loc[index,'id'] == i:
+                    for y in ast.literal_eval(books_df.loc[index,'categories']):
+                        categories_list.append(y)
+    else:
+        print("Can't recommend a book if there's no favorites is list...")
+
+    category = most_frequent(categories_list)
+
+    print("\n\nWe recommend: \n")
+    for index in books_df.index:
+            for y in ast.literal_eval(books_df.loc[index,'categories']):
+                if y == category and books_df.loc[index,'availability'] == True:
+                    print("Book ID: "+str(books_df.loc[index,'id'])+"\nTitle: "+str(books_df.loc[index,'title'])+"\nAuthor: "+str(books_df.loc[index,'author'])+"\nBook cost: "+str(books_df.loc[index,'cost'])+"$"+"\nShipping cost: "+str(books_df.loc[index,'shipping'])+"$"+"\n")

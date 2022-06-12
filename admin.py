@@ -16,7 +16,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def admin_add_books(books_df):
     
-    new_books_df = pd.read_csv('new_books.csv')
+    new_books_df = pd.read_csv('csv/new_books.csv')
 
     books_df = books_df.append(new_books_df, ignore_index = True)
     books_df.drop_duplicates(subset ="title",keep = 'first', inplace = True)
@@ -48,7 +48,7 @@ def admin_add_single_book(books_df):
 
     #id,title,author,publisher,categories,cost,shipping,availability,copies,bookstores
     while True: 
-        new_title = input("Enter the title of the book: ")
+        new_title = input("\nEnter the title of the book: ")
         if exists(new_title, books_df):
             choice = input("This book is already in the catalog!!!\nTry adding some other book? (y/n): ").lower()
             if  choice == "y":
@@ -149,33 +149,27 @@ def admin_edit_book(admin_df, books_df, login):
             flag_exists = True
             print("\nChecking if you have permission to edit the book...\n")
             #time.sleep(2)
-            access = admin_df.loc[login[1],'bookstores'].replace(" ",'').replace("[",'').replace("]",'').split(",")
+            access = ast.literal_eval(admin_df.loc[login[1],'bookstores'])
             access = [int(x) for x in access]
-            bookstores_copies = []
-            flag = False
-            for i in books_df.loc[id,'bookstores'].replace(" ",''):
-                if flag:
-                    bookstores_copies.append(int(i))
-                    flag = False
-                if i == ':':
-                    flag = True
+            bookstores_copies = ast.literal_eval(books_df.loc[id,'bookstores'])
 
             flag = False
             for i in access:
-                if bookstores_copies[i-1] > 0:
+                if bookstores_copies[i] > 0:
                     flag = True
                     break
             if flag:
-                print("You have permission to change this book")   
+                print("You have permission to edit this book")   
             else:
-                print("I'm afraid you don't have permission to change this book")
+                print("I'm afraid you don't have permission to edit this book")
                 return books_df
 
             #id,title,author,publisher,categories,cost,shipping,availability,copies,bookstores 
-            new_title = input("Enter the new title of the book: ")
-            new_id = id
-            new_author = input("Enter the new author of the book: ")
-            new_publisher = input("Enter the new publisher of the book: ")
+            books_df.at[id,'title'] = input("Enter the new title of the book: ")
+            books_df.at[id,'id'] = id
+            books_df.at[id,'author'] = input("Enter the new author of the book: ")
+            books_df.at[id,'publisher'] = input("Enter the new publisher of the book: ")
+
             new_categories = []
             while True: 
                 new_categories.append(input("Enter a new category of the book: "))
@@ -186,39 +180,40 @@ def admin_edit_book(admin_df, books_df, login):
                     break
                 else:
                     print("Enter 'y' or 'n'")
-            new_cost = float(input("Add the new cost of the book: "))
-            new_shipping = float(input("Add the new cost of shipping: "))
-            new_avail = bool(input("Will the book be available? (True/False) : "))
+
+            books_df.at[id,'categories'] = str(new_categories)
+            
+            books_df.at[id,'cost'] = float(input("Add the new cost of the book: "))
+            books_df.at[id,'shipping'] = float(input("Add the new cost of shipping: "))
+            books_df.at[id,'availability'] = bool(input("Will the book be available? (True/False) : "))
+
             new_copies = int(input("Add the new number of copies for book: "))
             print("Add the number of copies for each bookstore (The sum must not be > copies): ")
             
             while True:
                 new_bookstores_copies = [0]*5
                 for i in access:
-                    print("Add the number of copies in bookstore:")
-                    new_bookstores_copies.insert(i, int(input()))
+                    print("Add the number of copies in bookstore "+str(i)+": ")
+                    new_bookstores_copies[i-1] = int(input())
                 sum = new_bookstores_copies[0] + new_bookstores_copies[1] + new_bookstores_copies[2] + new_bookstores_copies[3] + new_bookstores_copies[4]
                 if sum == new_copies :
+                    books_df.at[id,'copies'] = new_copies
                     break
                 else:
                     print("Bookstores cant have more or less copies than copies genenerally available!!!. Check again...")
-                
-            new_categories = str(new_categories)
-            new_book = pd.Series({'id':new_id,
-                                'title':new_title,
-                                'author':new_author,
-                                'publisher':new_publisher,
-                                'categories':new_categories,
-                                'cost':new_cost,
-                                'shipping':new_shipping,
-                                'availability':new_avail,
-                                'copies':new_copies,
-                                'bookstores':{ 1: new_bookstores_copies[0] , 2: new_bookstores_copies[1], 3: new_bookstores_copies[2] , 4: new_bookstores_copies[3], 5: new_bookstores_copies[4] }
-                                })
-            
-            books_df = books_df.append(new_book, ignore_index = True)
-            books_df.drop_duplicates(subset ="id",keep = 'last', inplace = True)
-            books_df = books_df.sort_values(by=['id'], ascending=True)
+
+            bookstores = {}
+            bookstores[1] = new_bookstores_copies[0]
+            bookstores[2] = new_bookstores_copies[1]
+            bookstores[3] = new_bookstores_copies[2]
+            bookstores[4] = new_bookstores_copies[3]
+            bookstores[5] = new_bookstores_copies[4]
+
+            books_df.at[id,'bookstores'] = bookstores
+
+            books_df.to_csv('csv/books_data.csv', index=False)
+            books_df = pd.read_csv('csv/books_data.csv')
+
 
             print("Books have been updated!!!.\n")
             while True:      
@@ -236,7 +231,6 @@ def admin_edit_book(admin_df, books_df, login):
         print("\nSeems like this book does not exist. To add it select option '2' from the menu...\n")       
 
 
-#eroor, most likely need to write back to csv 
 def admin_delete_book(admin_df, books_df, login):
 
     id = int(input("\nEnter the id of the book you want to delete: ")) 
@@ -246,22 +240,16 @@ def admin_delete_book(admin_df, books_df, login):
             flag_exists = True
             print("\nChecking if you have permission to delete this book...\n")
             #time.sleep(2)
-            access = admin_df.loc[login[1],'bookstores'].replace(" ",'').replace("[",'').replace("]",'').split(",")
+            access = ast.literal_eval(admin_df.loc[login[1],'bookstores'])
             access = [int(x) for x in access]
-            bookstores_copies = []
-            flag = False
-            for i in books_df.loc[id,'bookstores'].replace(" ",''):
-                if flag:
-                    bookstores_copies.append(int(i))
-                    flag = False
-                if i == ':':
-                    flag = True
+            bookstores_copies = ast.literal_eval(books_df.loc[id,'bookstores'])
 
             flag = False
             for i in access:
-                if bookstores_copies[i-1] > 0:
+                if bookstores_copies[i] > 0:
                     flag = True
                     break
+
             if flag:
                 print("You have permission to delete this book")   
             else:
